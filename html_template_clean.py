@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, sys
+import re
 from bs4 import BeautifulSoup
 
 reload(sys)
@@ -10,6 +11,8 @@ def tempate_clean_files(current_dir):
     links = []
     # exclude .php files
     #links = [ f for f in os.listdir(os.getcwd()) if not f.endswith(".php") ]
+
+    # ---------  first browse the html files ----------------
     for root, subdirs, files in os.walk(current_dir):
         for filename in files:
             if filename.endswith(".html"):
@@ -38,6 +41,18 @@ def tempate_clean_files(current_dir):
                 #js
                 required_js_files = [link.get('src') for link in soup.find_all('script')]
                 links.extend(required_js_files)
+
+    # ---------  second browse the css files ----------------
+    for root, subdirs, files in os.walk(current_dir):
+        for filename in files:
+            # check for css filename exist in html 'links list'
+            if (filename.endswith(".css") and (filename in links)):
+                css_file_name = os.path.join(root, filename)
+                css_file = open(css_file_name,'r')
+                css_doc = css_file.read()
+
+                css_url_links = re.findall('url\(([^)]+)\)',css_doc)
+                links.extend(css_url_links)
 
     # create full path for links and copy to required_files list
     for index, f in enumerate(links):
